@@ -1,3 +1,41 @@
+"""
+This script sets up a data lake for NBA sports analytics using AWS services and sportsdata.io API.
+
+Modules:
+    boto3: AWS SDK for Python to interact with AWS services.
+    json: JSON encoder and decoder.
+    time: Time access and conversions.
+    requests: HTTP library for sending requests.
+    dotenv: Module to load environment variables from a .env file.
+    os: Provides functions to interact with the operating system.
+
+Functions:
+    create_s3_bucket():
+        Creates an S3 bucket for storing sports data.
+    
+    create_glue_database():
+        Creates a Glue database for the data lake.
+    
+    fetch_nba_data():
+        Fetches NBA player data from sportsdata.io.
+    
+    convert_to_line_delimited_json(data):
+        Converts data to line-delimited JSON format.
+    
+    upload_data_to_s3(data):
+        Uploads NBA data to the S3 bucket.
+    
+    create_glue_table():
+        Creates a Glue table for the data.
+    
+    configure_athena():
+        Sets up Athena output location.
+
+Main Workflow:
+    main():
+        Orchestrates the setup of the data lake by calling the above functions in sequence.
+"""
+
 import boto3
 import json
 import time
@@ -10,7 +48,7 @@ load_dotenv()
 
 # AWS configurations
 region = "us-east-1"  # Replace with your preferred AWS region
-bucket_name = "sports-analytics-data-lake"  # Change to a unique S3 bucket name
+bucket_name = "sports-analytics-data-lake-1324"  # Change to a unique S3 bucket name
 glue_database_name = "glue_nba_data_lake"
 athena_output_location = f"s3://{bucket_name}/athena-results/"
 
@@ -22,6 +60,7 @@ nba_endpoint = os.getenv("NBA_ENDPOINT")  # Get NBA endpoint from .env
 s3_client = boto3.client("s3", region_name=region)
 glue_client = boto3.client("glue", region_name=region)
 athena_client = boto3.client("athena", region_name=region)
+
 
 def create_s3_bucket():
     """Create an S3 bucket for storing sports data."""
@@ -37,6 +76,7 @@ def create_s3_bucket():
     except Exception as e:
         print(f"Error creating S3 bucket: {e}")
 
+
 def create_glue_database():
     """Create a Glue database for the data lake."""
     try:
@@ -50,6 +90,7 @@ def create_glue_database():
     except Exception as e:
         print(f"Error creating Glue database: {e}")
 
+
 def fetch_nba_data():
     """Fetch NBA player data from sportsdata.io."""
     try:
@@ -62,10 +103,12 @@ def fetch_nba_data():
         print(f"Error fetching NBA data: {e}")
         return []
 
+
 def convert_to_line_delimited_json(data):
     """Convert data to line-delimited JSON format."""
     print("Converting data to line-delimited JSON format...")
     return "\n".join([json.dumps(record) for record in data])
+
 
 def upload_data_to_s3(data):
     """Upload NBA data to the S3 bucket."""
@@ -77,14 +120,11 @@ def upload_data_to_s3(data):
         file_key = "raw-data/nba_player_data.jsonl"
 
         # Upload JSON data to S3
-        s3_client.put_object(
-            Bucket=bucket_name,
-            Key=file_key,
-            Body=line_delimited_data
-        )
+        s3_client.put_object(Bucket=bucket_name, Key=file_key, Body=line_delimited_data)
         print(f"Uploaded data to S3: {file_key}")
     except Exception as e:
         print(f"Error uploading data to S3: {e}")
+
 
 def create_glue_table():
     """Create a Glue table for the data."""
@@ -100,7 +140,7 @@ def create_glue_table():
                         {"Name": "LastName", "Type": "string"},
                         {"Name": "Team", "Type": "string"},
                         {"Name": "Position", "Type": "string"},
-                        {"Name": "Points", "Type": "int"}
+                        {"Name": "Points", "Type": "int"},
                     ],
                     "Location": f"s3://{bucket_name}/raw-data/",
                     "InputFormat": "org.apache.hadoop.mapred.TextInputFormat",
@@ -116,6 +156,7 @@ def create_glue_table():
     except Exception as e:
         print(f"Error creating Glue table: {e}")
 
+
 def configure_athena():
     """Set up Athena output location."""
     try:
@@ -127,6 +168,7 @@ def configure_athena():
         print("Athena output location configured successfully.")
     except Exception as e:
         print(f"Error configuring Athena: {e}")
+
 
 # Main workflow
 def main():
@@ -140,6 +182,7 @@ def main():
     create_glue_table()
     configure_athena()
     print("Data lake setup complete.")
+
 
 if __name__ == "__main__":
     main()

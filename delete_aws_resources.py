@@ -1,5 +1,29 @@
+"""
+This script deletes various AWS resources including S3 buckets, EC2 instances, RDS instances, Glue databases and tables, and Athena query results stored in S3.
+
+Functions:
+    delete_s3_buckets():
+        Deletes all S3 buckets and their contents.
+    
+    terminate_ec2_instances():
+        Terminates all EC2 instances.
+    
+    delete_rds_instances():
+        Deletes all RDS instances.
+    
+    delete_glue_resources():
+        Deletes Glue databases and tables.
+    
+    delete_athena_query_results(bucket_name):
+        Deletes Athena query results stored in a specified S3 bucket.
+    
+    main():
+        Executes the deletion of all specified AWS resources.
+"""
+
 import boto3
 from botocore.exceptions import ClientError
+
 
 def delete_s3_buckets():
     """Delete all S3 buckets and their contents."""
@@ -24,6 +48,7 @@ def delete_s3_buckets():
     except ClientError as e:
         print(f"Error listing buckets: {e}")
 
+
 def terminate_ec2_instances():
     """Terminate all EC2 instances."""
     ec2 = boto3.client("ec2")
@@ -37,6 +62,7 @@ def terminate_ec2_instances():
     except ClientError as e:
         print(f"Error terminating EC2 instances: {e}")
 
+
 def delete_rds_instances():
     """Delete all RDS instances."""
     rds = boto3.client("rds")
@@ -45,9 +71,12 @@ def delete_rds_instances():
         for instance in instances:
             instance_id = instance["DBInstanceIdentifier"]
             print(f"Deleting RDS instance: {instance_id}")
-            rds.delete_db_instance(DBInstanceIdentifier=instance_id, SkipFinalSnapshot=True)
+            rds.delete_db_instance(
+                DBInstanceIdentifier=instance_id, SkipFinalSnapshot=True
+            )
     except ClientError as e:
         print(f"Error deleting RDS instances: {e}")
+
 
 def delete_glue_resources():
     """Delete Glue databases and tables."""
@@ -66,6 +95,7 @@ def delete_glue_resources():
     except ClientError as e:
         print(f"Error deleting Glue resources: {e}")
 
+
 def delete_athena_query_results(bucket_name):
     """Delete Athena query results stored in S3."""
     s3 = boto3.client("s3")
@@ -78,6 +108,7 @@ def delete_athena_query_results(bucket_name):
     except ClientError as e:
         print(f"Error deleting Athena query results: {e}")
 
+
 def main():
     print("Deleting all resources in AWS account...")
     delete_s3_buckets()
@@ -87,6 +118,7 @@ def main():
     # Replace `your-s3-bucket-name` with the S3 bucket storing Athena query results
     delete_athena_query_results(bucket_name="your-s3-bucket-name")
     print("All specified resources deleted successfully.")
+
 
 if __name__ == "__main__":
     main()

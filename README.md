@@ -1,117 +1,147 @@
-# NBADataLake
-This repository contains the setup_nba_data_lake.py script, which automates the creation of a data lake for NBA analytics using AWS services. The script integrates Amazon S3, AWS Glue, and Amazon Athena, and sets up the infrastructure needed to store and query NBA-related data.
+# NBA Sports Analytics Data Lake Setup on AWS
 
-# Overview
-The setup_nba_data_lake.py script performs the following actions:
+This project sets up a data lake for NBA sports analytics using AWS services and the sportsdata.io API.
 
-Creates an Amazon S3 bucket to store raw and processed data.
-Uploads sample NBA data (JSON format) to the S3 bucket.
-Creates an AWS Glue database and an external table for querying the data.
-Configures Amazon Athena for querying data stored in the S3 bucket.
+The data lake infrastructure is created on AWS, including S3 buckets for data storage, Glue databases and tables for data cataloging, and Athena for querying the data. The project fetches NBA player data from the sportsdata.io API, processes it, and stores it in the data lake.
 
-# Prerequisites
-Before running the script, ensure you have the following:
+## Repository Structure
 
-Go to Sportsdata.io and create a free account
-At the top left, you should see "Developers", if you hover over it you should see "API Resources"
-Click on "Introduction & Testing"
+- `delete_aws_resources.py`: Script to delete AWS resources created by this project.
+- `src/setup_nba_data_lake.py`: Main script to set up the NBA data lake on AWS.
 
-Click on "SportsDataIO API Free Trial" and fill out the information & be sure to select NBA for this tutorial
+## Usage Instructions
 
-You will get an email and at the bottom it says "Launch Developer Portal"
+### Prerequisites
 
-By default it takes you to the NFL, on the left click on NBA
+- Python 3.6+
+- AWS account with appropriate permissions
+- sportsdata.io API key
+- AWS CLI configured with your credentials
 
-Scroll down until you see "Standings"
+### Installation
 
-You'll "Query String Parameters", the value in the drop down box is your API key. 
+1. Clone the repository:
 
-Copy this string because you will need to paste it later in the script
+   ```
+   git clone https://github.com/MaVeN-13TTN/day_3_nba_datalake
+   cd day_3_nba_datalake
+   ```
 
-IAM Role/Permissions: Ensure the user or role running the script has the following permissions:
+2. Install required Python packages:
 
-S3: s3:CreateBucket, s3:PutObject, s3:DeleteBucket, s3:ListBucket
-Glue: glue:CreateDatabase, glue:CreateTable, glue:DeleteDatabase, glue:DeleteTable
-Athena: athena:StartQueryExecution, athena:GetQueryResults
+   ```
+   pip install boto3 requests python-dotenv
+   ```
 
-# START HERE 
-# Step 1: Open CloudShell Console
+3. Create a `.env` file in the project root with the following content:
+   ```
+   SPORTS_DATA_API_KEY=your_api_key_here
+   NBA_ENDPOINT=https://api.sportsdata.io/v3/nba/stats/json/Players
+   ```
 
-1. Go to aws.amazon.com & sign into your account
+### Setting up the Data Lake
 
-2. In the top, next to the search bar you will see a square with a >_ inside, click this to open the CloudShell
+To set up the NBA data lake, run:
 
-# Step 2: Create the setup_nba_data_lake.py file
-1. In the CLI (Command Line Interface), type
-```bash
-nano setup_nba_data_lake.py
+```
+python src/setup_nba_data_lake.py
 ```
 
+This script performs the following actions:
 
-2. In another window, go to [GitHub](https://github.com/alahl1/NBADataLake)
+1. Creates an S3 bucket for data storage
+2. Creates a Glue database
+3. Fetches NBA player data from sportsdata.io API
+4. Converts the data to line-delimited JSON format
+5. Uploads the data to the S3 bucket
+6. Creates a Glue table for the data
+7. Configures the Athena output location
 
--Copy the contents inside the setup_nba_data_lake.py file
+### Deleting AWS Resources
 
--Go back to the Cloudshell window and paste the contents inside the file.
+To delete all AWS resources created by this project, run:
 
-3. Find the line of code under #Sportsdata.io configurations that says "api_key" 
-paste your api key inside the quotations
-
-4. Press ^X to exit, press Y to save the file, press enter to confirm the file name 
-
-
-# Step 3: Create .env file
-1. In the CLI (Command Line Interface), type
-```bash
-nano .env
 ```
-2. paste the following line of code into your file, ensure you swap out with your API key
-```bash
-SPORTS_DATA_API_KEY=your_sportsdata_api_key
-NBA_ENDPOINT=https://api.sportsdata.io/v3/nba/scores/json/Players
+python delete_aws_resources.py
 ```
 
-3. Press ^X to exit, press Y to save the file, press enter to confirm the file name 
+This script will delete:
 
+- S3 buckets and their contents
+- EC2 instances
+- RDS instances
+- Glue databases and tables
+- Athena query results stored in the S3 bucket
 
-# Step 4: Run the script
-1. In the CLI type
-```bash
-python3 setup_nba_data_lake.py
+### Troubleshooting
+
+#### S3 Bucket Creation Fails
+
+- **Problem**: The script fails to create the S3 bucket.
+- **Solution**:
+  1. Check if the bucket name is unique globally.
+  2. Ensure your AWS credentials have the necessary permissions.
+  3. If using a region other than `us-east-1`, modify the `region` variable in `setup_nba_data_lake.py`.
+
+#### API Data Fetching Fails
+
+- **Problem**: The script fails to fetch data from the sportsdata.io API.
+- **Solution**:
+  1. Verify your API key in the `.env` file.
+  2. Check your internet connection.
+  3. Ensure the API endpoint is correct and the service is available.
+
+#### Glue Resource Creation Fails
+
+- **Problem**: The script fails to create Glue databases or tables.
+- **Solution**:
+  1. Ensure your AWS account has the necessary permissions for Glue operations.
+  2. Check if the Glue service is available in your chosen AWS region.
+
+### Debugging
+
+To enable debug mode:
+
+1. Add the following at the beginning of both Python scripts:
+   ```python
+   import logging
+   logging.basicConfig(level=logging.DEBUG)
+   ```
+2. Re-run the scripts to see detailed debug output.
+
+Log files can be found in the CloudWatch Logs if you're running these scripts on an EC2 instance or as a Lambda function.
+
+## Data Flow
+
+The data flow in this project follows these steps:
+
+1. NBA player data is fetched from the sportsdata.io API.
+2. The data is converted to line-delimited JSON format.
+3. The formatted data is uploaded to an S3 bucket.
+4. A Glue table is created to catalog the data in the S3 bucket.
+5. Athena is configured to query the data using the Glue table.
+
 ```
--You should see the resources were successfully created, the sample data was uploaded successfully and the Data Lake Setup Completed
-
-# Step 5: Manually Check For The Resources
-1. In the Search Bar, type S3 and click blue hyper link name
-
--You should see 2 General purpose bucket named "Sports-analytics-data-lake"
-
--When you click the bucket name you will see 3 objects are in the bucket
-
-2. Click on raw-data and you will see it contains "nba_player_data.json"
-
-3. Click the file name and at the top you will see the option to Open the file
-
--You'll see a long string of various NBA data
-
-4. Head over to Amazon Athena and you could paste the following sample query:
-```bash
-SELECT FirstName, LastName, Position, Team
-FROM nba_players
-WHERE Position = 'PG';
+[sportsdata.io API] -> [Python Script] -> [S3 Bucket] -> [Glue Table] -> [Athena]
 ```
 
--Click Run
--You should see an output if you scroll down under "Query Results"
+Note: Ensure that your AWS IAM permissions allow for creating and managing S3 buckets, Glue databases and tables, and Athena queries.
 
-### **What We Learned**
-1. Securing AWS services with least privilege IAM policies.
-2. Automating the creation of services with a script.
-3. Integrating external APIs into cloud-based workflows.
+## Infrastructure
 
+The project uses the following AWS resources:
 
-### **Future Enhancements**
-1. Automate data ingestion with AWS Lambda
-2. Implement a data transformation layer with AWS Glue ETL
-3. Add advanced analytics and visualizations (AWS QuickSight)
+- S3:
 
+  - Bucket: `sports-analytics-data-lake-1324` (for storing NBA data and Athena query results)
+
+- Glue:
+
+  - Database: `glue_nba_data_lake`
+  - Table: `nba_players` (in the `glue_nba_data_lake` database)
+
+- Athena:
+  - Output location: `s3://sports-analytics-data-lake-1324/athena-results/`
+  - Database: `nba_analytics` (created if not exists)
+
+Note: The S3 bucket name `sports-analytics-data-lake-1324` is used as an example. You should replace this with a unique bucket name when setting up the project.
